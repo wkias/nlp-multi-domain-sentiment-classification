@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+
 class GradReverse(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x, lamb=1.0):
@@ -10,7 +11,8 @@ class GradReverse(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        return grad_output.neg() * ctx.lamb, None 
+        return grad_output.neg() * ctx.lamb, None
+
 
 class EmbedLayer(torch.nn.Module):
     def __init__(self, config):
@@ -24,8 +26,9 @@ class EmbedLayer(torch.nn.Module):
         word_emb = []
         for ele in x:
             word_emb.append(self.emb(ele).detach())
-            #word_emb.append(self.emb(ele))
+            # word_emb.append(self.emb(ele))
         return word_emb
+
 
 class LSTMLayer(torch.nn.Module):
     def __init__(self, config, layer=1):
@@ -36,18 +39,22 @@ class LSTMLayer(torch.nn.Module):
             text_emb = config.text_emb*2
         else:
             text_emb = config.text_emb
-        self.lstm = torch.nn.LSTM(text_emb, config.hidden_size, config.lstm_layer_size, dropout=config.dropout_keep_rate, batch_first=True, bidirectional=self.config.bidirectional)
+        self.lstm = torch.nn.LSTM(text_emb, config.hidden_size, config.lstm_layer_size,
+                                  dropout=config.dropout_keep_rate, batch_first=True, bidirectional=self.config.bidirectional)
 
     def forward(self, word_emb, initial_state=None):
         word_emb_new = self.drop(word_emb)
         #word_emb_new = word_emb
         if initial_state is None:
-            h0 = torch.autograd.Variable(torch.zeros((1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
-            c0 = torch.autograd.Variable(torch.zeros((1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+            h0 = torch.autograd.Variable(torch.zeros(
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+            c0 = torch.autograd.Variable(torch.zeros(
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
         avg_out = torch.mean(out, dim=1)
         return avg_out, out
+
 
 class CNNLayer(torch.nn.Module):
     def __init__(self, config):
@@ -55,19 +62,29 @@ class CNNLayer(torch.nn.Module):
         ind = 0
         self.config = config
         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
-        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(2, config.text_emb), stride=1, padding=0)# out_channel=100 
-        self.conv2 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(4, config.text_emb), stride=1, padding=0) 
-        self.conv3 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(6, config.text_emb), stride=1, padding=0) 
-        self.maxPool1 = torch.nn.MaxPool2d(kernel_size=(config.task_len[ind] - 2 + 1, 1))
-        self.maxPool2 = torch.nn.MaxPool2d(kernel_size=(config.task_len[ind] - 4 + 1, 1))
-        self.maxPool3 = torch.nn.MaxPool2d(kernel_size=(config.task_len[ind] - 6 + 1, 1))
+        self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
+            2, config.text_emb), stride=1, padding=0)  # out_channel=100
+        self.conv2 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
+            4, config.text_emb), stride=1, padding=0)
+        self.conv3 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
+            6, config.text_emb), stride=1, padding=0)
+        self.maxPool1 = torch.nn.MaxPool2d(
+            kernel_size=(config.task_len[ind] - 2 + 1, 1))
+        self.maxPool2 = torch.nn.MaxPool2d(
+            kernel_size=(config.task_len[ind] - 4 + 1, 1))
+        self.maxPool3 = torch.nn.MaxPool2d(
+            kernel_size=(config.task_len[ind] - 6 + 1, 1))
 
     def forward(self, word_emb):
         word_emb_1 = self.drop(word_emb)
-        word_emb_new = word_emb.view(word_emb_1.shape[0], 1, word_emb_1.shape[1], -1)
-        x1 = self.maxPool1(F.relu(self.conv1(word_emb_new))).view(word_emb.shape[0], -1)
-        x2 = self.maxPool2(F.relu(self.conv2(word_emb_new))).view(word_emb.shape[0], -1)
-        x3 = self.maxPool3(F.relu(self.conv3(word_emb_new))).view(word_emb.shape[0], -1)
+        word_emb_new = word_emb.view(
+            word_emb_1.shape[0], 1, word_emb_1.shape[1], -1)
+        x1 = self.maxPool1(F.relu(self.conv1(word_emb_new))
+                           ).view(word_emb.shape[0], -1)
+        x2 = self.maxPool2(F.relu(self.conv2(word_emb_new))
+                           ).view(word_emb.shape[0], -1)
+        x3 = self.maxPool3(F.relu(self.conv3(word_emb_new))
+                           ).view(word_emb.shape[0], -1)
         output = self.drop(torch.cat((x1, x2, x3), 1))
         return output, None
 
@@ -85,9 +102,11 @@ class LinearLayer(torch.nn.Module):
                 con = 2
                 advCon = 1
             if name == "adv":
-                self.fc = torch.nn.Linear(config.hidden_size*advCon*(1+self.config.bidirectional), config.task)
+                self.fc = torch.nn.Linear(
+                    config.hidden_size*advCon*(1+self.config.bidirectional), config.task)
             elif name == "task":
-                self.fc = torch.nn.Linear(config.hidden_size*con*(1+self.config.bidirectional), config.label_num)
+                self.fc = torch.nn.Linear(
+                    config.hidden_size*con*(1+self.config.bidirectional), config.label_num)
         elif namePrv == "CNN":
             if self.config.add_no_rev_grad:
                 con = 3
@@ -96,10 +115,12 @@ class LinearLayer(torch.nn.Module):
                 con = 2
                 advCon = 1
             if name == "adv":
-                self.fc = torch.nn.Linear(config.out_channel*advCon*3, config.task)
+                self.fc = torch.nn.Linear(
+                    config.out_channel*advCon*3, config.task)
             elif name == "task":
                 #self.fc = torch.nn.Linear(config.out_channel*con*3, config.label_num)
-                self.fc = torch.nn.Linear(config.out_channel*3, config.label_num)
+                self.fc = torch.nn.Linear(
+                    config.out_channel*3, config.label_num)
 
     def forward(self, x):
         if self.name == "adv":
@@ -114,30 +135,44 @@ class LinearLayer(torch.nn.Module):
             logits = self.fc(x[0])
         return logits
 
+
 class Model(torch.nn.Module):
     def __init__(self, config, model_name):
         super(Model, self).__init__()
         self.config = config
         self.emb = EmbedLayer(config)
-        self.mem = torch.nn.Parameter(torch.randn(config.task, config.text_emb))
+        self.mem = torch.nn.Parameter(
+            torch.randn(config.task, config.text_emb))
         self.domainLSTM = LSTMLayer(config)
         self.taskLSTM = LSTMLayer(config, 2)
         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
-        self.taskLinear = torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.hidden_size)
-        self.taskLinear2 = torch.nn.Linear(config.hidden_size, config.label_num)
+        self.taskLinear = torch.nn.Linear(
+            (1+config.bidirectional)*config.hidden_size, config.hidden_size)
+        self.taskLinear2 = torch.nn.Linear(
+            config.hidden_size, config.label_num)
         self.mapLinear = torch.nn.ModuleList([
-            torch.nn.Linear(config.text_emb, config.hidden_size, bias=False), 
-            torch.nn.Linear((1+config.bidirectional)*config.hidden_size * 2  , config.hidden_size, bias=False), 
-            torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.hidden_size, bias=False), 
-            torch.nn.Linear((1+config.bidirectional)*config.hidden_size + config.text_emb, config.hidden_size, bias=False), 
-            torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.hidden_size, bias=False), 
-            torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.hidden_size, bias=False), 
-            ])
-        self.attLinear = torch.nn.ModuleList([torch.nn.Linear(config.hidden_size, 1) for i in range(3)])
+            torch.nn.Linear(config.text_emb, config.hidden_size, bias=False),
+            torch.nn.Linear((1+config.bidirectional) *
+                            config.hidden_size * 2, config.hidden_size, bias=False),
+            torch.nn.Linear((1+config.bidirectional) *
+                            config.hidden_size, config.hidden_size, bias=False),
+            torch.nn.Linear((1+config.bidirectional)*config.hidden_size +
+                            config.text_emb, config.hidden_size, bias=False),
+            torch.nn.Linear((1+config.bidirectional) *
+                            config.hidden_size, config.hidden_size, bias=False),
+            torch.nn.Linear((1+config.bidirectional) *
+                            config.hidden_size, config.hidden_size, bias=False),
+        ])
+        self.attLinear = torch.nn.ModuleList(
+            [torch.nn.Linear(config.hidden_size, 1) for i in range(3)])
         self.domainLinear = torch.nn.Linear(config.text_emb, config.task)
-        self.embLinear = torch.nn.ModuleList([torch.nn.Linear(config.text_emb, config.text_emb) for i in range(16)])
-        self.embMap = torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.text_emb)
-        self.embMap2 = torch.nn.Linear((1+config.bidirectional)*config.hidden_size, config.text_emb)
+        self.embLinear = torch.nn.ModuleList(
+            [torch.nn.Linear(config.text_emb, config.text_emb) for i in range(16)])
+        self.embMap = torch.nn.Linear(
+            (1+config.bidirectional)*config.hidden_size, config.text_emb)
+        self.embMap2 = torch.nn.Linear(
+            (1+config.bidirectional)*config.hidden_size, config.text_emb)
+
         def weights_init(m):
             if isinstance(m, torch.nn.Linear):
                 torch.nn.init.normal_(m.weight.data, mean=0., std=0.1)
@@ -157,7 +192,6 @@ class Model(torch.nn.Module):
         taskLogit = torch.split(taskLogit, x[0].size(0))
         return taskLogit, None, None, None, None
 
-
     def fftraining(self, x, y, length):
         length = torch.cat(length, dim=0)
 
@@ -170,19 +204,21 @@ class Model(torch.nn.Module):
         word_emb_new = torch.cat([word_emb, domainEmb], dim=2)
 
         finalOut, taskSeqOut = self.taskLSTM(word_emb_new)
-        
-        hid = F.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(taskSeqOut.size(1), domainOut_ori.size(0), domainOut_ori.size(1)).transpose(0, 1)], dim=2)))
+
+        hid = F.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(
+            taskSeqOut.size(1), domainOut_ori.size(0), domainOut_ori.size(1)).transpose(0, 1)], dim=2)))
         score = self.attLinear[0](hid).squeeze()
         if length is not None:
             max_len = score.size(1)
-            idxes = torch.arange(0, max_len, out=torch.LongTensor(max_len)).unsqueeze(0).cuda()
-            mask = (idxes<length.unsqueeze(1)).float()
+            idxes = torch.arange(0, max_len, out=torch.LongTensor(
+                max_len)).unsqueeze(0).cuda()
+            mask = (idxes < length.unsqueeze(1)).float()
         score = F.softmax(score, dim=1)
         if length is not None:
             score = score * mask
         score = score.view(-1, 1, score.size(1))
-        finalOut = torch.matmul(score, taskSeqOut).view(-1,taskSeqOut.size(2))
-        
+        finalOut = torch.matmul(score, taskSeqOut).view(-1, taskSeqOut.size(2))
+
         taskLogit = self.taskLinear2(F.relu(self.taskLinear(finalOut)))
         return taskLogit, advLogit, None, None, None
 
@@ -194,11 +230,12 @@ class Model(torch.nn.Module):
         score = self.attLinear[ind](hid).squeeze()
         if length is not None:
             max_len = score.size(1)
-            idxes = torch.arange(0, max_len, out=torch.LongTensor(max_len)).unsqueeze(0).cuda()
+            idxes = torch.arange(0, max_len, out=torch.LongTensor(
+                max_len)).unsqueeze(0).cuda()
             if domainInd == -2:
-                mask = (idxes<length.unsqueeze(1)).float()
+                mask = (idxes < length.unsqueeze(1)).float()
             else:
-                mask = (idxes<length[domainInd].unsqueeze(1)).float()
+                mask = (idxes < length[domainInd].unsqueeze(1)).float()
         score = F.softmax(score, dim=1)
         if length is not None:
             score = score * mask

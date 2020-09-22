@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+
 def get_args():
     parser = ArgumentParser(description='pytorch/mtl')
     parser.add_argument('--model_name', type=str, default="CNN")
@@ -37,26 +38,25 @@ def get_args():
     parser.add_argument('--pretrain', type=int, default=0)
     parser.add_argument('--pretrain_path', type=str, default=None)
     args = parser.parse_args()
-    args.task_len_dict={
-            "apparel": 1202, 
-            "baby": 847,
-            "books": 5952, 
-            "camera_photo": 2623,
-            "dvd": 5316,
-            "electronics": 2018,
-            "health_personal_care": 1193, 
-            "imdb": 1187, 
-            "kitchen_housewares": 1383, 
-            "magazines": 2641, 
-            "MR": 61, 
-            "music": 1668, 
-            "software": 4791, 
-            "sports_outdoors": 1218, 
-            "toys_games": 1123, 
-            "video": 1551
+    args.task_len_dict = {
+        "apparel": 1202,
+        "baby": 847,
+        "books": 5952,
+        "camera_photo": 2623,
+        "dvd": 5316,
+        "electronics": 2018,
+        "health_personal_care": 1193,
+        "imdb": 1187,
+        "kitchen_housewares": 1383,
+        "magazines": 2641,
+        "MR": 61,
+        "music": 1668,
+        "software": 4791,
+        "sports_outdoors": 1218,
+        "toys_games": 1123,
+        "video": 1551
     }
     #args.task_len=[1202, 847, 5940, 2623, 5316, 2018, 1635, 1951, 1382, 2640, 54, 1668, 4791, 1356, 1123, 2185]
     args.task_len = [512] * 16
     #args.task_len = [0 for i in range(args.task)]
     return args
-
