@@ -3,9 +3,9 @@ import math
 import time
 import torch
 import numpy as np
-from . import util
-from . import loadData
-from . import NNManager
+import util
+import loadData
+import NNManager
 
 
 class Main():
@@ -20,7 +20,7 @@ class Main():
         print(self.config.maxSteps, " max steps")
         self.texti = loadData.TextIterator(self.config)
         self.config.text_vocab_size = len(self.texti.word2id)
-        embed_weight = np.load("../wordEmb/vector_" +
+        embed_weight = np.load("vector_" +
                                self.config.wordemb_suffix+".npy")
         self.model = NNManager.Model(self.config, self.config.model_name)
         self.model.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))

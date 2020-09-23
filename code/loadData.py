@@ -1,16 +1,18 @@
 import os
 import random
 import numpy as np
-from . import util
+import util
 
 
 class TextIterator():
     def __init__(self, config):
         self.config = config
-        self.dataPrefix = "../data/"
+        self.dataPrefix = "data/"
         self.validInd = [0 for i in range(config.task)]
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
+        self.encodingSet = set(
+            ["dvd.task.train", "MR.task.test", "MR.task.train"])
         self.name = []
         self.epoch = 0
         self.train = [[] for i in range(config.task)]
@@ -28,7 +30,7 @@ class TextIterator():
             print("unmask")
 
     def getVocab(self):
-        dic = eval(open("../vocab_" +
+        dic = eval(open("vocab_" +
                         self.config.wordemb_suffix, encoding='utf-8').readline())
         return dic
 
@@ -49,12 +51,8 @@ class TextIterator():
                 fileNameLS = fileName.split('.')
                 if fileNameLS[-1] != string:
                     continue
-                try:
-                    file = open(self.dataPrefix+fileName,
-                                encoding="utf-8")
-                except UnicodeDecodeError:
-                    file = open(self.dataPrefix+fileName,
-                                encoding="ISO-8859-1")
+                file = open(self.dataPrefix+fileName,
+                            encoding="utf-8" if fileName not in self.encodingSet else "ISO-8859-1")
                 if i == 0:
                     self.name.append(fileNameLS[0])
                     insertedInd = ind
