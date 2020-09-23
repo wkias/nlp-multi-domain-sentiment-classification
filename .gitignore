@@ -4,3 +4,7 @@ data/
 vocab_t
 vector_t.npy
 __pycache__/
+word
+*log
+vectors
+words
