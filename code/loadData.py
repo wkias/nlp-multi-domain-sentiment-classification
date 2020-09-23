@@ -28,7 +28,7 @@ class TextIterator():
             print("unmask")
 
     def getVocab(self):
-        dic = eval(open("../wordEmb/vocab_" +
+        dic = eval(open("../vocab_" +
                         self.config.wordemb_suffix, encoding='utf-8').readline())
         return dic
 
