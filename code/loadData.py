@@ -11,8 +11,6 @@ class TextIterator():
         self.validInd = [0 for i in range(config.task)]
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
-        self.encodingSet = set(
-            ["dvd.task.train", "MR.task.test", "MR.task.train"])
         self.name = []
         self.epoch = 0
         self.train = [[] for i in range(config.task)]
@@ -51,8 +49,12 @@ class TextIterator():
                 fileNameLS = fileName.split('.')
                 if fileNameLS[-1] != string:
                     continue
-                file = open(self.dataPrefix+fileName,
-                            encoding="utf-8" if fileName not in self.encodingSet else "ISO-8859-1")
+                try:
+                    file = open(self.dataPrefix+fileName,
+                                encoding="utf-8")
+                except UnicodeDecodeError:
+                    file = open(self.dataPrefix+fileName,
+                                encoding="ISO-8859-1")
                 if i == 0:
                     self.name.append(fileNameLS[0])
                     insertedInd = ind
