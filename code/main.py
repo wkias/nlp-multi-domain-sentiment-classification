@@ -22,6 +22,7 @@ class Main():
         self.config.text_vocab_size = len(self.texti.word2id)
         embed_weight = np.load("vector_" +
                                self.config.wordemb_suffix+".npy")
+        embed_weight = np.insert(embed_weight,embed_weight.shape[0],values=np.zeros([1,embed_weight.shape[1]]),axis=0)
         self.model = NNManager.Model(self.config, self.config.model_name)
         self.model.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))
         if self.config.pretrain == 1:

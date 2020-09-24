@@ -22,10 +22,7 @@ class EmbedLayer(torch.nn.Module):
     def forward(self, x, single=False):
         if single:
             return self.emb(x)
-        word_emb = []
-        for ele in x:
-            word_emb.append(self.emb(ele).detach())
-            # word_emb.append(self.emb(ele))
+        word_emb = [self.emb(i).detach() for i in x]
         return word_emb
 
 

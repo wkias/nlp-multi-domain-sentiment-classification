@@ -19,6 +19,7 @@ class TextIterator():
         self.valid = [[] for i in range(config.task)]
         self.test = [[] for i in range(config.task)]
         self.word2id = self.getVocab()
+        self.word2id['<unk>'] = len(self.word2id)
         self.readData()
         self.threshold = [
             len(self.train[i]) // self.config.batch_size for i in range(self.config.task)]
