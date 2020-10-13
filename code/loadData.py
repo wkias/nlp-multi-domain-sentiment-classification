@@ -12,7 +12,7 @@ class TextIterator():
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
         self.encodingSet = set(
-            ["dvd.task.train", "MR.task.test", "MR.task.train"])
+            ["dvd.task.train", "dvd.task.valid", "MR.task.test", "MR.task.train", "MR.task.valid"])
         self.name = []
         self.epoch = 0
         self.train = [[] for i in range(config.task)]
@@ -61,12 +61,15 @@ class TextIterator():
                 else:
                     insertedInd = self.name.index(fileNameLS[0])
                 tmpI = 0
-                for line in file:
-                    lineLS = line.split('\t')
-                    lineLS[0] = int(lineLS[0])
-                    lineLS[1] = lineLS[1].split()
-                    tmpI += 1
-                    ls[insertedInd].append(lineLS)
+                try:
+                    for line in file:
+                        lineLS = line.split('\t')
+                        lineLS[0] = int(lineLS[0])
+                        lineLS[1] = lineLS[1].split()
+                        tmpI += 1
+                        ls[insertedInd].append(lineLS)
+                except UnicodeDecodeError:
+                    print(fileName)
         for i in range(self.config.task):
             random.shuffle(self.train[i])
 
@@ -131,6 +134,11 @@ class TextIterator():
         for i in range(self.config.task):
             for j in range(retLen):
                 textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
+                # try:
+                    # print(i, j, indLS[i], indLS[i]*self.config.batch_size+j)
+                    # textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
+                # except:
+                    # print(0, i, j, indLS[i], indLS[i]*self.config.batch_size+j)
                 minLen = min(self.config.task_len[i], len(textItem[1]))
                 for k in range(minLen):
                     retX[i][j][k] = self.word2id[textItem[1][k]
@@ -150,7 +158,7 @@ if __name__ == "__main__":
     for i in range(42):
         texti.nextBatch()
     while True:
-        a, b, c, flag = texti.getValid()
+        a, b, c, d, flag = texti.getValid()
         print(texti.validInd)
         if flag == False:
             break

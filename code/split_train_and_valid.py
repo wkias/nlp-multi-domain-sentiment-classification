@@ -18,6 +18,6 @@ for i in dirr:
     tname = i.split('.')[0] + '.task.train'
     vname = i.split('.')[0] + '.task.valid'
     open(datarefix+tname,'w+', encoding="utf-8" if i not in encodingSet else "ISO-8859-1").writelines(
-        train[:int(0.8*len(train))])
+        train[:-320])
     open(datarefix+vname,'w+', encoding="utf-8" if i not in encodingSet else "ISO-8859-1").writelines(
-        train[int(0.8*len(train)):])
+        train[-320:])
