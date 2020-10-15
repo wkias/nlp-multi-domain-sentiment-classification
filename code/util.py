@@ -24,7 +24,7 @@ def get_args():
     parser.add_argument('--seqlen', type=int, default=5940)
     parser.add_argument('--lstm_layer_size', type=int, default=1)
     parser.add_argument('--use_unlabel', type=bool, default=False)
-    parser.add_argument('--task', type=int, default=16)
+    parser.add_argument('--task', type=int, default=4)
     parser.add_argument('--lamb', type=float, default=0.1)
     parser.add_argument('--maxClip', type=float, default=5.0)
     parser.add_argument('--weight_decay', type=float, default=1e-8)

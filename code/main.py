@@ -97,9 +97,9 @@ class Main():
                 err[i] += sum(taskOutput == testY_c[i])
                 tot[i] += testX_c[i].shape[0]
         if self.config.cross is None:
-            print("test: tot rate" + str(sum(err) / sum(tot)))
+            print("test: tot rate " + str(sum(err) / sum(tot)))
         else:
-            print("test: tot rate" +
+            print("test: tot rate " +
                   str(err[self.config.cross] / tot[self.config.cross]))
 
     def display(self, loss, lossT):
