@@ -134,11 +134,6 @@ class TextIterator():
         for i in range(self.config.task):
             for j in range(retLen):
                 textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
-                # try:
-                    # print(i, j, indLS[i], indLS[i]*self.config.batch_size+j)
-                    # textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
-                # except:
-                    # print(0, i, j, indLS[i], indLS[i]*self.config.batch_size+j)
                 minLen = min(self.config.task_len[i], len(textItem[1]))
                 for k in range(minLen):
                     retX[i][j][k] = self.word2id[textItem[1][k]

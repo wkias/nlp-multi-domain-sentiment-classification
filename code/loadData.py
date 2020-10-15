@@ -12,7 +12,6 @@ class TextIterator():
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
         self.encodingSet = set()
-            # ["dvd.task.train", "dvd.task.valid", "MR.task.test", "MR.task.train", "MR.task.valid"])
         self.name = []
         self.epoch = 0
         self.train = [[] for i in range(config.task)]
