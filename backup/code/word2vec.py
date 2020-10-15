@@ -3,7 +3,6 @@
 # %%
 import os
 import gc
-import nltk
 import numpy as np
 gc.enable()
 

@@ -2,10 +2,11 @@ import os
 import random
 
 # %%
-dataPrefix = './data_amazon/'
+dataPrefix = './data_orginal/'
 datarefix = './data/'
 dirr = [i for i in list(os.walk(dataPrefix))[0][2]
         if i.split('.')[-1] == 'train']
+encodingSet = set(["dvd.task.train", "MR.task.test", "MR.task.train"])
 
 
 

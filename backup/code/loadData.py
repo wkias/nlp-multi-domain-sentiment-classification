@@ -7,11 +7,12 @@ import util
 class TextIterator():
     def __init__(self, config):
         self.config = config
-        self.dataPrefix = "./data_amazon/"
+        self.dataPrefix = "./data/"
         self.validInd = [0 for i in range(config.task)]
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
-        self.encodingSet = set()
+        self.encodingSet = set(
+            ["dvd.task.train", "dvd.task.valid", "MR.task.test", "MR.task.train", "MR.task.valid"])
         self.name = []
         self.epoch = 0
         self.train = [[] for i in range(config.task)]
@@ -133,6 +134,11 @@ class TextIterator():
         for i in range(self.config.task):
             for j in range(retLen):
                 textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
+                # try:
+                    # print(i, j, indLS[i], indLS[i]*self.config.batch_size+j)
+                    # textItem = dataLS[i][indLS[i]*self.config.batch_size+j]
+                # except:
+                    # print(0, i, j, indLS[i], indLS[i]*self.config.batch_size+j)
                 minLen = min(self.config.task_len[i], len(textItem[1]))
                 for k in range(minLen):
                     retX[i][j][k] = self.word2id[textItem[1][k]
