@@ -106,7 +106,7 @@ class Main():
         self.model.train()
         step = 0
         while step < self.config.maxSteps:
-            batchX, batchY, batchDomain, batchLength = self.texti.nextBatch()
+            batchX, batchY, batchDomain, batchLength, batchDomainName = self.texti.nextBatch()
 
             self.optimizer.zero_grad()
 
@@ -125,7 +125,7 @@ class Main():
             lossDomain = 0.0
 
             taskLogit, advLogit, weightLogit, tmpShareOutput, enableVector = self.model(
-                batchX, batchY, batchLength, training=True)
+                batchX, batchY, batchLength, batchDomainName, training=True)
 
             batchY = torch.cat(batchY, dim=0)
             batchDomain = torch.cat(batchDomain, dim=0)
@@ -152,7 +152,7 @@ class Main():
             self.optimizer.step()
 
             if step % self.config.display_step == 0:
-                print("step: ", step, "end= ")
+                print("step: ", step, "end≤ ", self.config.maxSteps)
                 self.display(avgLoss/self.config.display_step,
                              avgLossTask/self.config.display_step)
                 avgLoss = 0.0

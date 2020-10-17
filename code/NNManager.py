@@ -178,14 +178,14 @@ class Model(torch.nn.Module):
                 torch.nn.init.normal_(m.all_weights[1][1], mean=0., std=0.1)
         self.apply(weights_init)
 
-    def forward(self, x, y, length, training=False, loss_func=torch.nn.MSELoss()):
-        taskLogit, advLogit, weightLogit, _, _ = self.fftraining(x, y, length)
+    def forward(self, x, y, length, domainName=None, training=False, loss_func=torch.nn.MSELoss()):
+        taskLogit, advLogit, weightLogit, _, _ = self.fftraining(x, y, length, domainName)
         if training:
             return taskLogit, advLogit, weightLogit, None, None
         taskLogit = torch.split(taskLogit, x[0].size(0))
         return taskLogit, None, None, None, None
 
-    def fftraining(self, x, y, length):
+    def fftraining(self, x, y, length, domainName=None):
         length = torch.cat(length, dim=0)
 
         word_emb = self.emb(x)
@@ -197,7 +197,6 @@ class Model(torch.nn.Module):
         word_emb_new = torch.cat([word_emb, domainEmb], dim=2)
 
         finalOut, taskSeqOut = self.taskLSTM(word_emb_new)
-
         hid = F.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(
             taskSeqOut.size(1), domainOut_ori.size(0), domainOut_ori.size(1)).transpose(0, 1)], dim=2)))
         score = self.attLinear[0](hid).squeeze()
@@ -213,6 +212,14 @@ class Model(torch.nn.Module):
         finalOut = torch.matmul(score, taskSeqOut).view(-1, taskSeqOut.size(2))
 
         taskLogit = self.taskLinear2(F.relu(self.taskLinear(finalOut)))
+
+        if domainName == self.config.pred_domain:
+            word_emb_new.detach()
+            taskSeqOut.detach()
+            finalOut.detach()
+            hid.detach()
+            score.detach()
+
         return taskLogit, advLogit, None, None, None
 
     def att(self, seq, guidence, ind, domainInd=-1, length=None):

@@ -17,6 +17,8 @@ class TextIterator():
         self.train = [[] for i in range(config.task)]
         self.valid = [[] for i in range(config.task)]
         self.test = [[] for i in range(config.task)]
+        self.domain_index = [0 for _ in range(config.task)]
+        self.domain = 0
         self.word2id = self.getVocab()
         self.word2id['<unk>'] = len(self.word2id)
         self.readData()
@@ -59,16 +61,13 @@ class TextIterator():
                     ind += 1
                 else:
                     insertedInd = self.name.index(fileNameLS[0])
-                tmpI = 0
-                try:
-                    for line in file:
-                        lineLS = line.split('\t')
-                        lineLS[0] = int(lineLS[0])
-                        lineLS[1] = lineLS[1].split()
-                        tmpI += 1
-                        ls[insertedInd].append(lineLS)
-                except UnicodeDecodeError:
-                    print(fileName)
+                # tmpI = 0
+                for line in file:
+                    lineLS = line.split('\t')
+                    lineLS[0] = int(lineLS[0])
+                    lineLS[1] = lineLS[1].split()
+                    # tmpI += 1
+                    ls[insertedInd].append(lineLS)
         for i in range(self.config.task):
             random.shuffle(self.train[i])
 
@@ -85,11 +84,12 @@ class TextIterator():
                      for i in range(self.config.task)]
         retLength = [np.zeros(shape=[self.config.batch_size])
                      for i in range(self.config.task)]
+        retDomainName = self.name[self.domain % self.config.task]
         p = np.array([self.config.mask_prob, 1-self.config.mask_prob])
         for i in range(self.config.task):
             for j in range(self.config.batch_size):
-                textItem = self.train[i][self.trainInd[i]
-                                         * self.config.batch_size+j]
+                textItem = self.train[self.domain % self.config.task][self.domain_index[i]]
+                self.domain_index[i] += 1
                 minLen = min(self.config.task_len[i], len(textItem[1]))
                 mask_arr = np.random.choice([0, 1], size=[minLen], p=p)
                 for k in range(minLen):
@@ -99,13 +99,35 @@ class TextIterator():
                     else:
                         retX[i][j][k] = 0
                 retY[i][j] = textItem[0]
-                retDomain[i][j] = i
+                retDomain[i][j] = self.domain % self.config.task
                 retLength[i][j] = minLen
             self.trainInd[i] += 1
             if self.trainInd[i] == self.threshold[i]:
                 self.trainInd[i] = 0
                 random.shuffle(self.train[i])
-        return retX, retY, retDomain, retLength
+        self.domain += 1
+        # p = np.array([self.config.mask_prob, 1-self.config.mask_prob])
+        # for i in range(self.config.task):
+        #     for j in range(self.config.batch_size):
+        #         textItem = self.train[i][self.trainInd[i]
+        #                                  * self.config.batch_size+j]
+        #         minLen = min(self.config.task_len[i], len(textItem[1]))
+        #         mask_arr = np.random.choice([0, 1], size=[minLen], p=p)
+        #         for k in range(minLen):
+        #             if self.config.wordemb_suffix != "mask_t" or mask_arr[k] == 1:
+        #                 retX[i][j][k] = self.word2id[textItem[1][k]
+        #                                              ] if textItem[1][k] in self.word2id else self.word2id["<unk>"]
+        #             else:
+        #                 retX[i][j][k] = 0
+        #         retY[i][j] = textItem[0]
+        #         retDomain[i][j] = i
+        #         retDomainName[i][j] = self.name[i]
+        #         retLength[i][j] = minLen
+        #     self.trainInd[i] += 1
+        #     if self.trainInd[i] == self.threshold[i]:
+        #         self.trainInd[i] = 0
+        #         random.shuffle(self.train[i])
+        return retX, retY, retDomain, retLength, retDomainName
 
     def getValid(self, type=0):
         if type == 0:

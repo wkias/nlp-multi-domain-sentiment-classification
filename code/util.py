@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 def get_args():
     parser = ArgumentParser(description='pytorch/mtl')
     parser.add_argument('--model_name', type=str, default="CNN")
+    parser.add_argument('--pred_domain', type=str, default="kitchen")
     parser.add_argument('--add_no_rev_grad', type=bool, default=False)
     parser.add_argument('--lr_decay', type=int, default=4)
     parser.add_argument('--lr_decay_rate', type=float, default=0.8)
