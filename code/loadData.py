@@ -22,8 +22,7 @@ class TextIterator():
         self.word2id = self.getVocab()
         self.word2id['<unk>'] = len(self.word2id)
         self.readData()
-        self.threshold = [
-            len(self.train[i]) // self.config.batch_size for i in range(self.config.task)]
+        self.threshold = [len(self.train[i]) for i in range(self.config.task)]
         for i in range(config.task):
             print(len(self.train[i]), len(self.valid[i]), len(self.test[i]))
         if self.config.wordemb_suffix == "mask_t":
@@ -84,7 +83,6 @@ class TextIterator():
                      for i in range(self.config.task)]
         retLength = [np.zeros(shape=[self.config.batch_size])
                      for i in range(self.config.task)]
-        retDomainName = self.name[self.domain % self.config.task]
         p = np.array([self.config.mask_prob, 1-self.config.mask_prob])
         for i in range(self.config.task):
             for j in range(self.config.batch_size):
@@ -102,31 +100,11 @@ class TextIterator():
                 retDomain[i][j] = self.domain % self.config.task
                 retLength[i][j] = minLen
             self.trainInd[i] += 1
-            if self.trainInd[i] == self.threshold[i]:
-                self.trainInd[i] = 0
+            if self.domain_index[i] == self.threshold[i]:
+                self.domain_index[i] = 0
                 random.shuffle(self.train[i])
         self.domain += 1
-        # p = np.array([self.config.mask_prob, 1-self.config.mask_prob])
-        # for i in range(self.config.task):
-        #     for j in range(self.config.batch_size):
-        #         textItem = self.train[i][self.trainInd[i]
-        #                                  * self.config.batch_size+j]
-        #         minLen = min(self.config.task_len[i], len(textItem[1]))
-        #         mask_arr = np.random.choice([0, 1], size=[minLen], p=p)
-        #         for k in range(minLen):
-        #             if self.config.wordemb_suffix != "mask_t" or mask_arr[k] == 1:
-        #                 retX[i][j][k] = self.word2id[textItem[1][k]
-        #                                              ] if textItem[1][k] in self.word2id else self.word2id["<unk>"]
-        #             else:
-        #                 retX[i][j][k] = 0
-        #         retY[i][j] = textItem[0]
-        #         retDomain[i][j] = i
-        #         retDomainName[i][j] = self.name[i]
-        #         retLength[i][j] = minLen
-        #     self.trainInd[i] += 1
-        #     if self.trainInd[i] == self.threshold[i]:
-        #         self.trainInd[i] = 0
-        #         random.shuffle(self.train[i])
+        retDomainName = self.name[self.domain % self.config.task]
         return retX, retY, retDomain, retLength, retDomainName
 
     def getValid(self, type=0):
@@ -172,6 +150,7 @@ class TextIterator():
 if __name__ == "__main__":
     texti = TextIterator(util.get_args())
     for i in range(42):
+    # while True:
         texti.nextBatch()
     while True:
         a, b, c, d, flag = texti.getValid()

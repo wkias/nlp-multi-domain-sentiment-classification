@@ -17,7 +17,6 @@ class Main():
         self.config.lr_decay_begin = self.config.lr_decay_begin * \
             (1400 // self.config.batch_size)
         self.config.maxSteps = self.config.epochs * 1400 // self.config.batch_size + 1
-        print(self.config.maxSteps, " max steps")
         self.texti = loadData.TextIterator(self.config)
         self.config.text_vocab_size = len(self.texti.word2id)
         embed_weight = np.load("vector_" +
@@ -33,6 +32,10 @@ class Main():
         ), lr=self.config.learning_rate, weight_decay=self.config.weight_decay)
         self.lossfunc = torch.nn.CrossEntropyLoss()
         self.start = time.time()
+        print('\n\n--------------------------------------')
+        print('target domain\t', self.config.pred_domain)
+        print(self.config.maxSteps, " max steps")
+
 
     def valid(self):
         tot = [0 for i in range(self.config.task)]

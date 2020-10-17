@@ -129,6 +129,16 @@ class LinearLayer(torch.nn.Module):
         return logits
 
 
+class CNNLayer(torch.nn.Module):
+    def __init__(self, config) -> None:
+        super(Model, self).__init__()
+        self.config = config
+        self.cnn = torch.nn.Conv3d()
+
+    def forward():
+        return None
+
+
 class Model(torch.nn.Module):
     def __init__(self, config, model_name):
         super(Model, self).__init__()
@@ -197,7 +207,7 @@ class Model(torch.nn.Module):
         word_emb_new = torch.cat([word_emb, domainEmb], dim=2)
 
         finalOut, taskSeqOut = self.taskLSTM(word_emb_new)
-        hid = F.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(
+        hid = torch.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(
             taskSeqOut.size(1), domainOut_ori.size(0), domainOut_ori.size(1)).transpose(0, 1)], dim=2)))
         score = self.attLinear[0](hid).squeeze()
         if length is not None:
