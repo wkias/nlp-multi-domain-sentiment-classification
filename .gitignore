@@ -1,5 +1,5 @@
 .vscode/
-data/
+data/*
 *txt
 vocab_t
 vector_t.npy
@@ -8,7 +8,7 @@ word
 *log
 vectors
 words
-data_orginal/
-data_amazon/
-data_amazon_orginal/
+data_orginal/temp/*
 data_baseline/
+results/*
+backup/

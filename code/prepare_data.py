@@ -33,13 +33,13 @@ for i in list(os.walk(dataPrefix + 'temp/'))[0][2]:
     for j in range(10):
         random.shuffle(reviews)
     with open(datarefix + i + '.train', 'w', encoding='utf-8') as f:
-        for k in reviews[:1500]:
+        for k in reviews[:1600]:
             f.write(k)
     with open(datarefix + i + '.test', 'w', encoding='utf-8') as f:
-        for k in reviews[1500:]:
+        for k in reviews[1600:]:
             f.write(k)
     with open(datarefix + i + '.valid', 'w', encoding='utf-8') as f:
-        for k in reviews[1500:]:
+        for k in reviews[1600:]:
             f.write(k)
 
 
