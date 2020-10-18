@@ -7,7 +7,7 @@ import util
 class TextIterator():
     def __init__(self, config):
         self.config = config
-        self.dataPrefix = "./data/"
+        self.dataPrefix = "data/"
         self.validInd = [0 for i in range(config.task)]
         self.trainInd = [0 for i in range(config.task)]
         self.testInd = [0 for i in range(config.task)]
@@ -84,7 +84,8 @@ class TextIterator():
         p = np.array([self.config.mask_prob, 1-self.config.mask_prob])
         for i in range(self.config.task):
             for j in range(self.config.batch_size):
-                textItem = self.train[self.domain % self.config.task][self.domain_index[i]]
+                textItem = self.train[self.domain %
+                                      self.config.task][self.domain_index[i]]
                 self.domain_index[i] += 1
                 minLen = min(self.config.task_len[i], len(textItem[1]))
                 mask_arr = np.random.choice([0, 1], size=[minLen], p=p)
@@ -148,7 +149,7 @@ class TextIterator():
 if __name__ == "__main__":
     texti = TextIterator(util.get_args())
     for i in range(42):
-    # while True:
+        # while True:
         texti.nextBatch()
     while True:
         a, b, c, d, flag = texti.getValid()

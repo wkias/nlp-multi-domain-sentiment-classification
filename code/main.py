@@ -3,7 +3,7 @@ import math
 import time
 import torch
 import numpy as np
-import json
+import pickle
 import util
 import loadData
 import NNManager
@@ -25,7 +25,7 @@ class HistInfo():
         self.max_val_acc = 0
         self.max_test_acc = 0
         self.iter = iter(range(epochs))
-    
+
     def append(self, s, e, l, tl, v, t, mv, mt):
         self.index.append(self.iter.__next__())
         self.start_time.append(s)
@@ -35,6 +35,7 @@ class HistInfo():
         self.test_acc.append(t)
         self.max_valid_acc = mv
         self.max_test_acc = mt
+
 
 class Main():
     def __init__(self):
@@ -50,12 +51,14 @@ class Main():
         self.texti = loadData.TextIterator(self.config)
         self.config.text_vocab_size = len(self.texti.word2id)
         embed_weight = np.load("vector_" + self.config.wordemb_suffix+".npy")
-        embed_weight = np.insert(embed_weight,embed_weight.shape[0],values=np.zeros([1,embed_weight.shape[1]]),axis=0)
+        embed_weight = np.insert(embed_weight, embed_weight.shape[0], values=np.zeros(
+            [1, embed_weight.shape[1]]), axis=0)
         self.model = NNManager.Model(self.config, self.config.model_name)
         self.model.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))
         if self.config.dual_gpu:
             self.model = torch.nn.DataParallel(self.model)
-            self.model.module.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))
+            self.model.module.emb.emb.weight.data.copy_(
+                torch.from_numpy(embed_weight))
         if self.config.pretrain == 1:
             self.model.load_state_dict(torch.load(
                 self.config.pretrain_path, map_location='cpu'))
@@ -63,7 +66,8 @@ class Main():
         self.optimizer = torch.optim.Adam(self.model.parameters(
         ), lr=self.config.learning_rate, weight_decay=self.config.weight_decay)
         self.lossfunc = torch.nn.CrossEntropyLoss()
-        self.histInfo = HistInfo(self.config.pred_domain, self.config.epochs, self.config.maxSteps)
+        self.histInfo = HistInfo(
+            self.config.pred_domain, self.config.epochs, self.config.maxSteps)
         self.start = time.time()
         self.end = time.time()
         self.valid_acc = 0
@@ -103,12 +107,12 @@ class Main():
                 tot[i] += validX_c[i].shape[0]
         if self.config.cross is None:
             self.valid_acc = sum(err) / sum(tot)
-            print("valid acc: tot rate " + str(self.valid_acc))
+            print("valid acc: " + str(self.valid_acc))
             if self.valid_acc > self.maxValidAcc:
                 self.maxValidAcc = self.valid_acc
         else:
             self.valid_acc = err[self.config.cross] / tot[self.config.cross]
-            print("valid acc: tot rate " + str(self.valid_acc))
+            print("valid acc: " + str(self.valid_acc))
             if self.valid_acc > self.maxValidAcc:
                 self.maxValidAcc = self.valid_acc
 
@@ -136,21 +140,22 @@ class Main():
                 tot[i] += testX_c[i].shape[0]
         if self.config.cross is None:
             self.test_acc = sum(err) / sum(tot)
-            print("test acc: tot rate " + str(self.test_acc))
+            print("test acc: " + str(self.test_acc))
             if self.test_acc > self.maxTestAcc:
                 self.maxTestAcc = self.test_acc
         else:
             self.test_acc = err[self.config.cross] / tot[self.config.cross]
-            print("test acc: tot rate " + str(self.test_acc))
+            print("test acc: " + str(self.test_acc))
             if self.test_acc > self.maxTestAcc:
                 self.maxTestAcc = self.test_acc
 
-        print('max valid acc ', self.maxValidAcc)
-        print('max test acc ', self.maxTestAcc, '\n')
+        print('max valid acc: ', self.maxValidAcc)
+        print('max test acc: ', self.maxTestAcc, '\n')
 
     def display(self, loss, lossT):
         self.end = time.time()
-        self.histInfo.append(self.start, self.end, loss, lossT, self.valid_acc, self.test_acc, self.maxValidAcc, self.test_acc)
+        self.histInfo.append(self.start, self.end, loss, lossT,
+                             self.valid_acc, self.test_acc, self.maxValidAcc, self.test_acc)
         print("loss: {0:.5f}, lossTask: {1:.5f}, time: {2:.5f}".format(
             loss, lossT, self.end-self.start))
         self.start = self.end
@@ -160,7 +165,7 @@ class Main():
         avgLossTask = 0.0
         avgLossAdv = 0.0
         self.model.train()
-        step = 0
+        step = 1
         while step <= self.config.maxSteps:
             batchX, batchY, batchDomain, batchLength, batchDomainName = self.texti.nextBatch()
 
@@ -207,16 +212,15 @@ class Main():
 
             self.optimizer.step()
 
-            if step % self.config.display_step == 0:
-                print("step: ", step, "end= ", self.config.maxSteps)
-                self.display(avgLoss/self.config.display_step,
-                             avgLossTask/self.config.display_step)
+            if step*self.config.batch_size % 1200 == 0:
+                print("step: ", step, "/", self.config.maxSteps)
+                self.display(avgLoss/(self.config.maxSteps/self.config.epochs),
+                             avgLossTask/(self.config.maxSteps/self.config.epochs))
                 avgLoss = 0.0
                 avgLossTask = 0.0
                 avgLossAdv = 0.0
 
-            if step % self.config.valid_step == 0:
-                tmpLS = []
+            if step*self.config.batch_size % 1200 == 0:
                 self.model.eval()
                 self.valid()
                 self.model.train()
@@ -249,4 +253,4 @@ class Main():
 if __name__ == "__main__":
     m = Main()
     m.trainingProcess()
-    open('results' + m.config.pred_domain, 'w').write(str(m.histInfo))
+    pickle.dump(m.histInfo, open('results/' + m.config.pred_domain, 'w'))

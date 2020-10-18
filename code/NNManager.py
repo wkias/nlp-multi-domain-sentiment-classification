@@ -189,7 +189,8 @@ class Model(torch.nn.Module):
         self.apply(weights_init)
 
     def forward(self, x, y, length, domainName=None, training=False, loss_func=torch.nn.MSELoss()):
-        taskLogit, advLogit, weightLogit, _, _ = self.fftraining(x, y, length, domainName)
+        taskLogit, advLogit, weightLogit, _, _ = self.fftraining(
+            x, y, length, domainName)
         if training:
             return taskLogit, advLogit, weightLogit, None, None
         taskLogit = torch.split(taskLogit, x[0].size(0))
