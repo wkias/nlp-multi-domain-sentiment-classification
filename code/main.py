@@ -249,4 +249,4 @@ class Main():
 if __name__ == "__main__":
     m = Main()
     m.trainingProcess()
-    open(m.histInfo, m.config.pred_domain + '.json', 'w').write(str(m.histInfo))
+    open('results' + m.config.pred_domain, 'w').write(str(m.histInfo))
