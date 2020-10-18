@@ -7,8 +7,8 @@ gc.enable()
 
 
 d = ['books','dvd','electronics','kitchen']
-dataPrefix = '../data_orginal/'
-datarefix = '../data/'
+dataPrefix = 'data_orginal/'
+datarefix = 'data/'
 sentences = []
 prop = '0'
 regex = '(<review_text>)([\s\S]*?)(</review_text>)'
@@ -33,13 +33,13 @@ for i in list(os.walk(dataPrefix + 'temp/'))[0][2]:
     for j in range(10):
         random.shuffle(reviews)
     with open(datarefix + i + '.train', 'w', encoding='utf-8') as f:
-        for k in reviews[:1200]:
+        for k in reviews[:1500]:
             f.write(k)
     with open(datarefix + i + '.test', 'w', encoding='utf-8') as f:
-        for k in reviews[1200:1600]:
+        for k in reviews[1500:]:
             f.write(k)
     with open(datarefix + i + '.valid', 'w', encoding='utf-8') as f:
-        for k in reviews[1600:]:
+        for k in reviews[1500:]:
             f.write(k)
 
 
@@ -51,18 +51,18 @@ words = set(words)
 
 
 vect_words = set()
-with open('../glove.twitter.27B.200d.txt', 'r',encoding='utf-8') as f:
+with open('glove.twitter.27B.200d.txt', 'r',encoding='utf-8') as f:
     for line in f:
         vect_words.add(line.split(' ')[0])
 
 words = words.intersection(vect_words)
 vocab_size = len(words)
 vocab_t = {w: idx for idx, w in enumerate(words)}
-open('../vocab_t','w',encoding='utf-8').write(str(vocab_t))
+open('vocab_t','w',encoding='utf-8').write(str(vocab_t))
 
 
 vectors = {}
-with open('../glove.twitter.27B.200d.txt', 'r',encoding='utf-8') as f:
+with open('glove.twitter.27B.200d.txt', 'r',encoding='utf-8') as f:
     for line in f:
         vals = line.rstrip().split(' ')
         if vals[0] in words:
@@ -75,5 +75,5 @@ for word, v in vectors.items():
     if word == '<unk>':
         continue
     vector_t[vocab_t[word], :] = v
-np.save('../vector_t',vector_t)
+np.save('vector_t',vector_t)
 

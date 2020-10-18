@@ -3,15 +3,44 @@ import math
 import time
 import torch
 import numpy as np
+import json
 import util
 import loadData
 import NNManager
 
 
+class HistInfo():
+    def __init__(self, tar, epochs, max_steps) -> None:
+        self.target_domain = tar
+        self.epochs = epochs
+        self.max_steps = max_steps
+        self.index = []
+        self.start_time = []
+        self.end_time = []
+        self.gap = []
+        self.loss = []
+        self.taskLoss = []
+        self.valid_acc = []
+        self.test_acc = []
+        self.max_val_acc = 0
+        self.max_test_acc = 0
+        self.iter = iter(range(epochs))
+    
+    def append(self, s, e, l, tl, v, t, mv, mt):
+        self.index.append(self.iter.__next__())
+        self.start_time.append(s)
+        self.end_time.append(e)
+        self.gap.append(e - s)
+        self.valid_acc.append(v)
+        self.test_acc.append(t)
+        self.max_valid_acc = mv
+        self.max_test_acc = mt
+
 class Main():
     def __init__(self):
         self.maxValidAcc = 0.0
         self.maxTestAcc = 0.0
+        self.epochs = 0
         self.config = util.get_args()
         self.config.lr_decay = self.config.lr_decay * \
             (1200 // self.config.batch_size)
@@ -34,13 +63,20 @@ class Main():
         self.optimizer = torch.optim.Adam(self.model.parameters(
         ), lr=self.config.learning_rate, weight_decay=self.config.weight_decay)
         self.lossfunc = torch.nn.CrossEntropyLoss()
+        self.histInfo = HistInfo(self.config.pred_domain, self.config.epochs, self.config.maxSteps)
         self.start = time.time()
+        self.end = time.time()
+        self.valid_acc = 0
+        self.test_acc = 0
+        self.loss = 0
+        self.task_loss = 0
         print('\n\n--------------------------------------')
         print('target domain\t', self.config.pred_domain)
-        print(self.config.maxSteps, " max steps")
-
+        print(self.config.maxSteps, " max steps\n\n")
 
     def valid(self):
+        print('epoch:', self.epochs)
+        self.epochs += 1
         tot = [0 for i in range(self.config.task)]
         err = [0 for i in range(self.config.task)]
         while True:
@@ -66,15 +102,15 @@ class Main():
                 err[i] += sum(taskOutput == validY_c[i])
                 tot[i] += validX_c[i].shape[0]
         if self.config.cross is None:
-            validAcc = sum(err) / sum(tot)
-            print("valid acc: tot rate " + str(validAcc))
-            if validAcc > self.maxValidAcc:
-                self.maxValidAcc = validAcc
+            self.valid_acc = sum(err) / sum(tot)
+            print("valid acc: tot rate " + str(self.valid_acc))
+            if self.valid_acc > self.maxValidAcc:
+                self.maxValidAcc = self.valid_acc
         else:
-            validAcc = err[self.config.cross] / tot[self.config.cross]
-            print("valid acc: tot rate " + str(validAcc))
-            if validAcc > self.maxValidAcc:
-                self.maxValidAcc = validAcc
+            self.valid_acc = err[self.config.cross] / tot[self.config.cross]
+            print("valid acc: tot rate " + str(self.valid_acc))
+            if self.valid_acc > self.maxValidAcc:
+                self.maxValidAcc = self.valid_acc
 
         tot = [0 for i in range(self.config.task)]
         err = [0 for i in range(self.config.task)]
@@ -99,24 +135,25 @@ class Main():
                 err[i] += sum(taskOutput == testY_c[i])
                 tot[i] += testX_c[i].shape[0]
         if self.config.cross is None:
-            testAcc = sum(err) / sum(tot)
-            print("test acc: tot rate " + str(testAcc))
-            if testAcc > self.maxTestAcc:
-                self.maxTestAcc = testAcc
+            self.test_acc = sum(err) / sum(tot)
+            print("test acc: tot rate " + str(self.test_acc))
+            if self.test_acc > self.maxTestAcc:
+                self.maxTestAcc = self.test_acc
         else:
-            testAcc = err[self.config.cross] / tot[self.config.cross]
-            print("test acc: tot rate " + str(testAcc))
-            if validAcc > self.maxTestAcc:
-                self.maxTestAcc = testAcc
+            self.test_acc = err[self.config.cross] / tot[self.config.cross]
+            print("test acc: tot rate " + str(self.test_acc))
+            if self.test_acc > self.maxTestAcc:
+                self.maxTestAcc = self.test_acc
 
         print('max valid acc ', self.maxValidAcc)
         print('max test acc ', self.maxTestAcc, '\n')
 
     def display(self, loss, lossT):
-        timeN = time.time()
+        self.end = time.time()
+        self.histInfo.append(self.start, self.end, loss, lossT, self.valid_acc, self.test_acc, self.maxValidAcc, self.test_acc)
         print("loss: {0:.5f}, lossTask: {1:.5f}, time: {2:.5f}".format(
-            loss, lossT, timeN-self.start))
-        self.start = timeN
+            loss, lossT, self.end-self.start))
+        self.start = self.end
 
     def trainingProcess(self):
         avgLoss = 0.0
@@ -171,7 +208,7 @@ class Main():
             self.optimizer.step()
 
             if step % self.config.display_step == 0:
-                print("step: ", step, "end≤ ", self.config.maxSteps)
+                print("step: ", step, "end= ", self.config.maxSteps)
                 self.display(avgLoss/self.config.display_step,
                              avgLossTask/self.config.display_step)
                 avgLoss = 0.0
@@ -212,3 +249,4 @@ class Main():
 if __name__ == "__main__":
     m = Main()
     m.trainingProcess()
+    open(m.histInfo, m.config.pred_domain + '.json', 'w').write(str(m.histInfo))
