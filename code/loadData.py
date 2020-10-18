@@ -60,12 +60,10 @@ class TextIterator():
                     ind += 1
                 else:
                     insertedInd = self.name.index(fileNameLS[0])
-                # tmpI = 0
                 for line in file:
                     lineLS = line.split('\t')
                     lineLS[0] = int(lineLS[0])
                     lineLS[1] = lineLS[1].split()
-                    # tmpI += 1
                     ls[insertedInd].append(lineLS)
         for i in range(self.config.task):
             random.shuffle(self.train[i])

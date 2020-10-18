@@ -10,20 +10,23 @@ import NNManager
 
 class Main():
     def __init__(self):
-        self.maxAcc = 0.0
+        self.maxValidAcc = 0.0
+        self.maxTestAcc = 0.0
         self.config = util.get_args()
         self.config.lr_decay = self.config.lr_decay * \
-            (1400 // self.config.batch_size)
+            (1200 // self.config.batch_size)
         self.config.lr_decay_begin = self.config.lr_decay_begin * \
-            (1400 // self.config.batch_size)
-        self.config.maxSteps = self.config.epochs * 1400 // self.config.batch_size + 1
+            (1200 // self.config.batch_size)
+        self.config.maxSteps = self.config.epochs * 1200 // self.config.batch_size
         self.texti = loadData.TextIterator(self.config)
         self.config.text_vocab_size = len(self.texti.word2id)
-        embed_weight = np.load("vector_" +
-                               self.config.wordemb_suffix+".npy")
+        embed_weight = np.load("vector_" + self.config.wordemb_suffix+".npy")
         embed_weight = np.insert(embed_weight,embed_weight.shape[0],values=np.zeros([1,embed_weight.shape[1]]),axis=0)
         self.model = NNManager.Model(self.config, self.config.model_name)
         self.model.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))
+        if self.config.dual_gpu:
+            self.model = torch.nn.DataParallel(self.model)
+            self.model.module.emb.emb.weight.data.copy_(torch.from_numpy(embed_weight))
         if self.config.pretrain == 1:
             self.model.load_state_dict(torch.load(
                 self.config.pretrain_path, map_location='cpu'))
@@ -63,10 +66,15 @@ class Main():
                 err[i] += sum(taskOutput == validY_c[i])
                 tot[i] += validX_c[i].shape[0]
         if self.config.cross is None:
-            print("valid acc: tot rate " + str(sum(err) / sum(tot)))
+            validAcc = sum(err) / sum(tot)
+            print("valid acc: tot rate " + str(validAcc))
+            if validAcc > self.maxValidAcc:
+                self.maxValidAcc = validAcc
         else:
-            print("valid acc: tot rate " +
-                  str(err[self.config.cross] / tot[self.config.cross]))
+            validAcc = err[self.config.cross] / tot[self.config.cross]
+            print("valid acc: tot rate " + str(validAcc))
+            if validAcc > self.maxValidAcc:
+                self.maxValidAcc = validAcc
 
         tot = [0 for i in range(self.config.task)]
         err = [0 for i in range(self.config.task)]
@@ -91,10 +99,18 @@ class Main():
                 err[i] += sum(taskOutput == testY_c[i])
                 tot[i] += testX_c[i].shape[0]
         if self.config.cross is None:
-            print("test: tot rate " + str(sum(err) / sum(tot)))
+            testAcc = sum(err) / sum(tot)
+            print("test acc: tot rate " + str(testAcc))
+            if testAcc > self.maxTestAcc:
+                self.maxTestAcc = testAcc
         else:
-            print("test: tot rate " +
-                  str(err[self.config.cross] / tot[self.config.cross]))
+            testAcc = err[self.config.cross] / tot[self.config.cross]
+            print("test acc: tot rate " + str(testAcc))
+            if validAcc > self.maxTestAcc:
+                self.maxTestAcc = testAcc
+
+        print('max valid acc ', self.maxValidAcc)
+        print('max test acc ', self.maxTestAcc, '\n')
 
     def display(self, loss, lossT):
         timeN = time.time()
@@ -108,7 +124,7 @@ class Main():
         avgLossAdv = 0.0
         self.model.train()
         step = 0
-        while step < self.config.maxSteps:
+        while step <= self.config.maxSteps:
             batchX, batchY, batchDomain, batchLength, batchDomainName = self.texti.nextBatch()
 
             self.optimizer.zero_grad()
