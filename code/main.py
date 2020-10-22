@@ -3,7 +3,7 @@ import math
 import time
 import torch
 import numpy as np
-import pickle
+import json
 import util
 import loadData
 import NNManager
@@ -35,6 +35,10 @@ class HistInfo():
         self.test_acc.append(t)
         self.max_valid_acc = mv
         self.max_test_acc = mt
+    
+    def to_json(self):
+        rst = {'loss':self.loss, 'task_loss':self.taskLoss, 'valid_acc':self.valid_acc, 'test_acc':self.test_acc}
+        json.dump(rst, open(self.target_domain + '_' + str(time.time())  + '.json', 'w'))
 
 
 class Main():
@@ -248,9 +252,9 @@ class Main():
         print("last eval:")
         self.model.eval()
         self.valid()
+        self.histInfo.to_json()()
 
 
 if __name__ == "__main__":
     m = Main()
     m.trainingProcess()
-    pickle.dump(m.histInfo, open('results/' + m.config.pred_domain, 'w'))
