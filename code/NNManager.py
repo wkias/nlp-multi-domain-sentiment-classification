@@ -81,7 +81,7 @@ class CNNLayer(torch.nn.Module):
         x3 = self.maxPool3(F.relu(self.conv3(word_emb_new))
                            ).view(word_emb.shape[0], -1)
         output = self.drop(torch.cat((x1, x2, x3), 1))
-        return output, None
+        return output
 
 
 class LinearLayer(torch.nn.Module):
@@ -131,12 +131,22 @@ class LinearLayer(torch.nn.Module):
 
 class CNNLayer(torch.nn.Module):
     def __init__(self, config) -> None:
-        super(Model, self).__init__()
+        super(CNNLayer, self).__init__()
+        ind = 0
         self.config = config
-        self.cnn = torch.nn.Conv3d()
+        self.drop = torch.nn.Dropout(config.dropout_keep_rate)
+        self.cnn = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
+            5, 5), stride=1, padding=2)
+        self.maxPool2d = torch.nn.MaxPool2d(
+            kernel_size=(config.task_len[ind] - 6 + 1, 1))
 
-    def forward():
-        return None
+    def forward(self, word_emb):
+        x = self.drop(word_emb)
+        x = x.view(32,1,512,256)
+        x = self.cnn(x)
+        x = F.relu(x)
+        # x = self.maxPool2d(x)
+        return x.squeeze()
 
 
 class Model(torch.nn.Module):
@@ -147,6 +157,7 @@ class Model(torch.nn.Module):
         self.mem = torch.nn.Parameter(
             torch.randn(config.task, config.text_emb))
         self.domainLSTM = LSTMLayer(config)
+        self.cnn = CNNLayer(config)
         self.taskLSTM = LSTMLayer(config, 2)
         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
         self.taskLinear = torch.nn.Linear(
@@ -202,6 +213,7 @@ class Model(torch.nn.Module):
         word_emb = self.emb(x)
         word_emb = torch.cat(word_emb, dim=0)
         domainOut_ori, domainSeqOut = self.domainLSTM(word_emb)
+        domainSeqOut = self.cnn(domainSeqOut)
         domainEmb = self.embMap2(domainSeqOut)
         domainOut = self.embMap(domainOut_ori)
         advLogit = self.domainLinear(F.relu(domainOut))

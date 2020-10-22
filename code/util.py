@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--lr_decay_begin', type=int, default=0)
     parser.add_argument('--decay_method', type=str, default="linear")
     parser.add_argument('--min_lr', type=float, default=0.0)
-    parser.add_argument('--out_channel', type=int, default=100)
+    parser.add_argument('--out_channel', type=int, default=1)
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--bidirectional', type=bool, default=True)
     parser.add_argument('--batch_size', type=int, default=8)
