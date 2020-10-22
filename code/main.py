@@ -31,14 +31,30 @@ class HistInfo():
         self.start_time.append(s)
         self.end_time.append(e)
         self.gap.append(e - s)
+        self.loss.append(l)
+        self.taskLoss.append(tl)
         self.valid_acc.append(v)
         self.test_acc.append(t)
         self.max_valid_acc = mv
         self.max_test_acc = mt
-    
-    def to_json(self):
+
+    def to_csv(self):
         rst = {'loss':self.loss, 'task_loss':self.taskLoss, 'valid_acc':self.valid_acc, 'test_acc':self.test_acc}
-        json.dump(rst, open(self.target_domain + '_' + str(time.time())  + '.json', 'w'))
+        json.dump(rst, open('results/' + self.target_domain + '_' + str(time.time())  + '.json', 'w'))
+    
+    def to_csv(self):
+        csv = ', start_time, end_time, gap, loss, task_loss, valid_acc, test_acc'
+        for i in range(len(self.loss)):
+            csv += str(i) + ', '
+            csv += str(self.start_time[i]) + ', '
+            csv += str(self.end_time[i]) + ', '
+            csv += str(self.gap[i]) + ', '
+            csv += str(self.loss[i]) + ', '
+            csv += str(self.task_loss[i]) + ', '
+            csv += str(self.valid_acc[i]) + ', '
+            csv += str(self.test_acc[i]) + ', '
+            csv += '\n'
+        open('results/' + self.target_domain + '_' + str(time.time())  + '.csv', 'w').write(csv)
 
 
 class Main():
@@ -252,7 +268,7 @@ class Main():
         print("last eval:")
         self.model.eval()
         self.valid()
-        self.histInfo.to_json()()
+        self.histInfo.to_csv()
 
 
 if __name__ == "__main__":
