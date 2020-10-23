@@ -4,13 +4,15 @@ import time
 import torch
 import numpy as np
 import json
+import os
 import util
 import loadData
 import NNManager
 
 
 class HistInfo():
-    def __init__(self, tar, epochs, max_steps) -> None:
+    def __init__(self, config, tar, epochs, max_steps) -> None:
+        self.config = config
         self.target_domain = tar
         self.epochs = epochs
         self.max_steps = max_steps
@@ -19,7 +21,7 @@ class HistInfo():
         self.end_time = []
         self.gap = []
         self.loss = []
-        self.taskLoss = []
+        self.task_loss = []
         self.valid_acc = []
         self.test_acc = []
         self.max_val_acc = 0
@@ -32,18 +34,21 @@ class HistInfo():
         self.end_time.append(e)
         self.gap.append(e - s)
         self.loss.append(l)
-        self.taskLoss.append(tl)
+        self.task_loss.append(tl)
         self.valid_acc.append(v)
         self.test_acc.append(t)
         self.max_valid_acc = mv
         self.max_test_acc = mt
 
     def to_csv(self):
-        rst = {'loss':self.loss, 'task_loss':self.taskLoss, 'valid_acc':self.valid_acc, 'test_acc':self.test_acc}
+        rst = {'loss':self.loss, 'task_loss':self.task_loss, 'valid_acc':self.valid_acc, 'test_acc':self.test_acc}
         json.dump(rst, open('results/' + self.target_domain + '_' + str(time.time())  + '.json', 'w'))
     
     def to_csv(self):
-        csv = ', start_time, end_time, gap, loss, task_loss, valid_acc, test_acc'
+        tm = str(time.time())
+        os.mkdir('results/' + tm)
+        open('results/' + tm + '/' + self.target_domain, 'w').write(str(self.config))
+        csv = ', start_time, end_time, gap, loss, task_loss, valid_acc, test_acc\n'
         for i in range(len(self.loss)):
             csv += str(i) + ', '
             csv += str(self.start_time[i]) + ', '
@@ -54,7 +59,7 @@ class HistInfo():
             csv += str(self.valid_acc[i]) + ', '
             csv += str(self.test_acc[i]) + ', '
             csv += '\n'
-        open('results/' + self.target_domain + '_' + str(time.time())  + '.csv', 'w').write(csv)
+        open('results/' + tm + '/' + self.target_domain + '.csv', 'w').write(csv)
 
 
 class Main():
@@ -87,7 +92,7 @@ class Main():
         ), lr=self.config.learning_rate, weight_decay=self.config.weight_decay)
         self.lossfunc = torch.nn.CrossEntropyLoss()
         self.histInfo = HistInfo(
-            self.config.pred_domain, self.config.epochs, self.config.maxSteps)
+            self.config, self.config.pred_domain, self.config.epochs, self.config.maxSteps)
         self.start = time.time()
         self.end = time.time()
         self.valid_acc = 0
