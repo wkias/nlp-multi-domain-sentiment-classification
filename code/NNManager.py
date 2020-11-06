@@ -42,13 +42,15 @@ class LSTMLayer(torch.nn.Module):
         word_emb_new = self.drop(word_emb)
         if initial_state is None:
             h0 = torch.autograd.Variable(torch.zeros(
-                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             c0 = torch.autograd.Variable(torch.zeros(
-                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
         avg_out = torch.mean(out, dim=1)
-        return avg_out, out
+        return avg_out, out, hn
 
 
 class CNNLayer(torch.nn.Module):
@@ -58,7 +60,7 @@ class CNNLayer(torch.nn.Module):
         self.config = config
         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
         self.conv1 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
-            2, config.text_emb), stride=1, padding=0)  # out_channel=100
+            2, config.text_emb), stride=1, padding=0)
         self.conv2 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
             4, config.text_emb), stride=1, padding=0)
         self.conv3 = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
@@ -74,12 +76,12 @@ class CNNLayer(torch.nn.Module):
         word_emb_1 = self.drop(word_emb)
         word_emb_new = word_emb.view(
             word_emb_1.shape[0], 1, word_emb_1.shape[1], -1)
-        x1 = self.maxPool1(F.relu(self.conv1(word_emb_new))
-                           ).view(word_emb.shape[0], -1)
-        x2 = self.maxPool2(F.relu(self.conv2(word_emb_new))
-                           ).view(word_emb.shape[0], -1)
-        x3 = self.maxPool3(F.relu(self.conv3(word_emb_new))
-                           ).view(word_emb.shape[0], -1)
+        x1 = F.relu(self.conv1(word_emb_new))
+        x1 = self.maxPool1(x1).view(word_emb.shape[0], -1)
+        x2 = F.relu(self.conv2(word_emb_new))
+        x2 = self.maxPool2(x2).view(word_emb.shape[0], -1)
+        x3 = F.relu(self.conv3(word_emb_new))
+        x3 = self.maxPool3(x3).view(word_emb.shape[0], -1)
         output = self.drop(torch.cat((x1, x2, x3), 1))
         return output
 
@@ -129,24 +131,24 @@ class LinearLayer(torch.nn.Module):
         return logits
 
 
-class CNNLayer(torch.nn.Module):
-    def __init__(self, config) -> None:
-        super(CNNLayer, self).__init__()
-        ind = 0
-        self.config = config
-        self.drop = torch.nn.Dropout(config.dropout_keep_rate)
-        self.cnn = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
-            5, 5), stride=1, padding=2)
-        self.maxPool2d = torch.nn.MaxPool2d(
-            kernel_size=(config.task_len[ind] - 6 + 1, 1))
+# class CNNLayer(torch.nn.Module):
+#     def __init__(self, config) -> None:
+#         super(CNNLayer, self).__init__()
+#         ind = 0
+#         self.config = config
+#         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
+#         self.cnn = torch.nn.Conv2d(in_channels=1, out_channels=config.out_channel, kernel_size=(
+#             5, 5), stride=1, padding=2)
+#         self.maxPool2d = torch.nn.MaxPool2d(
+#             kernel_size=(config.task_len[ind] - 6 + 1, 1))
 
-    def forward(self, word_emb):
-        x = self.drop(word_emb)
-        x = x.view(32,1,512,256)
-        x = self.cnn(x)
-        x = F.relu(x)
-        # x = self.maxPool2d(x)
-        return x.squeeze()
+#     def forward(self, word_emb):
+#         x = self.drop(word_emb)
+#         x = x.view(32,1,512,256)
+#         x = self.cnn(x)
+#         x = F.relu(x)
+#         # x = self.maxPool2d(x)
+#         return x.squeeze()
 
 
 class Model(torch.nn.Module):
@@ -212,21 +214,23 @@ class Model(torch.nn.Module):
 
         word_emb = self.emb(x)
         word_emb = torch.cat(word_emb, dim=0)
-        domainOut_ori, domainSeqOut = self.domainLSTM(word_emb)
-        domainSeqOut = self.cnn(domainSeqOut)
+        domainOut_ori, domainSeqOut, lstm_hidden = self.domainLSTM(word_emb)
+        domainSeqOut = self.attention_net(domainSeqOut, lstm_hidden)  # self-attention
+        # domainSeqOut = self.cnn(domainSeqOut) # CNN
         domainEmb = self.embMap2(domainSeqOut)
         domainOut = self.embMap(domainOut_ori)
         advLogit = self.domainLinear(F.relu(domainOut))
         word_emb_new = torch.cat([word_emb, domainEmb], dim=2)
 
-        finalOut, taskSeqOut = self.taskLSTM(word_emb_new)
+        finalOut, taskSeqOut, _ = self.taskLSTM(word_emb_new)
         hid = torch.tanh(self.mapLinear[1](torch.cat([taskSeqOut, domainOut_ori.expand(
             taskSeqOut.size(1), domainOut_ori.size(0), domainOut_ori.size(1)).transpose(0, 1)], dim=2)))
         score = self.attLinear[0](hid).squeeze()
         if length is not None:
             max_len = score.size(1)
             idxes = torch.arange(0, max_len, out=torch.LongTensor(
-                max_len)).unsqueeze(0).cuda()
+                # max_len)).unsqueeze(0).cuda()
+                max_len)).unsqueeze(0)
             mask = (idxes < length.unsqueeze(1)).float()
         score = F.softmax(score, dim=1)
         if length is not None:
@@ -254,7 +258,8 @@ class Model(torch.nn.Module):
         if length is not None:
             max_len = score.size(1)
             idxes = torch.arange(0, max_len, out=torch.LongTensor(
-                max_len)).unsqueeze(0).cuda()
+                # max_len)).unsqueeze(0).cuda()
+                max_len)).unsqueeze(0)
             if domainInd == -2:
                 mask = (idxes < length.unsqueeze(1)).float()
             else:
@@ -265,3 +270,12 @@ class Model(torch.nn.Module):
         score = score.view(-1, 1, score.size(1))
         finalOut = torch.matmul(score, seq).view(-1, seq.size(2))
         return finalOut, score
+
+    def attention_net(self, lstm_output, lstm_hidden):
+        lstm_hidden = lstm_hidden.permute(1, 0, 2)
+        lstm_hidden = lstm_hidden.reshape(32, -1)
+        attn_weights = torch.bmm(lstm_output, lstm_hidden)
+        soft_attn_weights = F.softmax(attn_weights, 1)
+        output = torch.bmm(lstm_output.transpose(1, 2), soft_attn_weights.unsqueeze(2)).squeeze(2)
+
+        return output
