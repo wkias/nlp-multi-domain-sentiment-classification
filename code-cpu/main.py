@@ -87,7 +87,7 @@ class Main():
         if self.config.pretrain == 1:
             self.model.load_state_dict(torch.load(
                 self.config.pretrain_path, map_location='cpu'))
-        self.model.cuda()
+        # self.model.cuda()
         self.optimizer = torch.optim.Adam(self.model.parameters(
         ), lr=self.config.learning_rate, weight_decay=self.config.weight_decay)
         self.lossfunc = torch.nn.CrossEntropyLoss()
@@ -115,17 +115,17 @@ class Main():
                 break
 
             validX = [torch.autograd.Variable(torch.from_numpy(
-                validX_c[i])).cuda() for i in range(self.config.task)]
-                # validX_c[i])) for i in range(self.config.task)]
+                # validX_c[i])).cuda() for i in range(self.config.task)]
+                validX_c[i])) for i in range(self.config.task)]
             validY = [torch.autograd.Variable(torch.from_numpy(
-                validY_c[i]).long()).cuda() for i in range(self.config.task)]
-                # validY_c[i]).long()) for i in range(self.config.task)]
+                # validY_c[i]).long()).cuda() for i in range(self.config.task)]
+                validY_c[i]).long()) for i in range(self.config.task)]
             validDomain = [torch.autograd.Variable(torch.from_numpy(
-                validDomain_c[i]).long()).cuda() for i in range(self.config.task)]
-                # validDomain_c[i]).long()) for i in range(self.config.task)]
+                # validDomain_c[i]).long()).cuda() for i in range(self.config.task)]
+                validDomain_c[i]).long()) for i in range(self.config.task)]
             validLength = [torch.autograd.Variable(torch.from_numpy(
-                validLength_c[i]).long()).cuda() for i in range(self.config.task)]
-                # validLength_c[i]).long()) for i in range(self.config.task)]
+                # validLength_c[i]).long()).cuda() for i in range(self.config.task)]
+                validLength_c[i]).long()) for i in range(self.config.task)]
 
             taskLogit, advLogit, weightLogit, tmpShareOutput, enableVector = self.model(
                 validX, validY, validLength)
@@ -152,17 +152,17 @@ class Main():
             if flag == False:
                 break
             testX = [torch.autograd.Variable(torch.from_numpy(
-                testX_c[i])).cuda() for i in range(self.config.task)]
-                # testX_c[i])) for i in range(self.config.task)]
+                # testX_c[i])).cuda() for i in range(self.config.task)]
+                testX_c[i])) for i in range(self.config.task)]
             testY = [torch.autograd.Variable(torch.from_numpy(
-                testY_c[i]).long()).cuda() for i in range(self.config.task)]
-                # testY_c[i]).long()) for i in range(self.config.task)]
+                # testY_c[i]).long()).cuda() for i in range(self.config.task)]
+                testY_c[i]).long()) for i in range(self.config.task)]
             testDomain = [torch.autograd.Variable(torch.from_numpy(
-                testDomain_c[i]).long()).cuda() for i in range(self.config.task)]
-                # testDomain_c[i]).long()) for i in range(self.config.task)]
+                # testDomain_c[i]).long()).cuda() for i in range(self.config.task)]
+                testDomain_c[i]).long()) for i in range(self.config.task)]
             testLength = [torch.autograd.Variable(torch.from_numpy(
-                testLength_c[i]).long()).cuda() for i in range(self.config.task)]
-                # testLength_c[i]).long()) for i in range(self.config.task)]
+                # testLength_c[i]).long()).cuda() for i in range(self.config.task)]
+                testLength_c[i]).long()) for i in range(self.config.task)]
 
             taskLogit, advLogit, weightLogit, tmpShareOutput, enableVector = self.model(
                 testX, testY, testLength)
@@ -205,17 +205,17 @@ class Main():
             self.optimizer.zero_grad()
 
             batchX = [torch.autograd.Variable(torch.from_numpy(
-                batchX[i])).cuda() for i in range(self.config.task)]
-                # batchX[i])) for i in range(self.config.task)]
+                # batchX[i])).cuda() for i in range(self.config.task)]
+                batchX[i])) for i in range(self.config.task)]
             batchY = [torch.autograd.Variable(torch.from_numpy(
-                batchY[i]).long()).cuda() for i in range(self.config.task)]
-                # batchY[i]).long()) for i in range(self.config.task)]
+                # batchY[i]).long()).cuda() for i in range(self.config.task)]
+                batchY[i]).long()) for i in range(self.config.task)]
             batchDomain = [torch.autograd.Variable(torch.from_numpy(
-                batchDomain[i]).long()).cuda() for i in range(self.config.task)]
-                # batchDomain[i]).long()) for i in range(self.config.task)]
+                # batchDomain[i]).long()).cuda() for i in range(self.config.task)]
+                batchDomain[i]).long()) for i in range(self.config.task)]
             batchLength = [torch.autograd.Variable(torch.from_numpy(
-                batchLength[i]).long()).cuda() for i in range(self.config.task)]
-                # batchLength[i]).long()) for i in range(self.config.task)]
+                # batchLength[i]).long()).cuda() for i in range(self.config.task)]
+                batchLength[i]).long()) for i in range(self.config.task)]
 
             lossTask = 0.0
             lossAdv = 0.0

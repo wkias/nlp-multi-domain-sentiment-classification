@@ -56,11 +56,11 @@ class LSTMLayer(torch.nn.Module):
         word_emb_new = self.drop(word_emb)
         if initial_state is None:
             h0 = torch.autograd.Variable(torch.zeros(
-                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
-                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
+                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             c0 = torch.autograd.Variable(torch.zeros(
-                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
-                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
+                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
+                (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
         out = self.attention_net(out, hn)
@@ -245,8 +245,8 @@ class Model(torch.nn.Module):
         if length is not None:
             max_len = score.size(1)
             idxes = torch.arange(0, max_len, out=torch.LongTensor(
-                max_len)).unsqueeze(0).cuda()
-                # max_len)).unsqueeze(0)
+                # max_len)).unsqueeze(0).cuda()
+                max_len)).unsqueeze(0)
             mask = (idxes < length.unsqueeze(1)).float()
         score = F.softmax(score, dim=1)
         if length is not None:
@@ -274,8 +274,8 @@ class Model(torch.nn.Module):
         if length is not None:
             max_len = score.size(1)
             idxes = torch.arange(0, max_len, out=torch.LongTensor(
-                max_len)).unsqueeze(0).cuda()
-                # max_len)).unsqueeze(0)
+                # max_len)).unsqueeze(0).cuda()
+                max_len)).unsqueeze(0)
             if domainInd == -2:
                 mask = (idxes < length.unsqueeze(1)).float()
             else:
