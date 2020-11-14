@@ -40,7 +40,7 @@ class HistInfo():
         self.max_valid_acc = mv
         self.max_test_acc = mt
 
-    def to_csv(self):
+    def to_json(self):
         rst = {'loss':self.loss, 'task_loss':self.task_loss, 'valid_acc':self.valid_acc, 'test_acc':self.test_acc}
         json.dump(rst, open('results/' + self.target_domain + '_' + str(time.time())  + '.json', 'w'))
     

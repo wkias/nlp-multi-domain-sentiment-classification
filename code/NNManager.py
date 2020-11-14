@@ -63,7 +63,7 @@ class LSTMLayer(torch.nn.Module):
                 # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
-        out = self.attention_net(out, hn)
+        # out = self.attention_net(out, hn) #attention
         avg_out = torch.mean(out, dim=1)
         return avg_out, out
 
