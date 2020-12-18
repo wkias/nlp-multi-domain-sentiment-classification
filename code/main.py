@@ -46,8 +46,7 @@ class HistInfo():
     
     def to_csv(self):
         tm = str(time.time())
-        os.mkdir('results/' + tm)
-        open('results/' + tm + '/' + self.target_domain, 'w').write(str(self.config))
+        open('results/' + self.target_domain + tm, 'w').write(str(self.config))
         csv = ', start_time, end_time, gap, loss, task_loss, valid_acc, test_acc\n'
         for i in range(len(self.loss)):
             csv += str(i) + ', '
@@ -59,7 +58,7 @@ class HistInfo():
             csv += str(self.valid_acc[i]) + ', '
             csv += str(self.test_acc[i]) + ', '
             csv += '\n'
-        open('results/' + tm + '/' + self.target_domain + '.csv', 'w').write(csv)
+        open('results/' + self.target_domain + tm + '.csv', 'w').write(csv)
 
 
 class Main():

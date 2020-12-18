@@ -31,6 +31,7 @@ class LSTMLayer(torch.nn.Module):
         super(LSTMLayer, self).__init__()
         self.config = config
         self.drop = torch.nn.Dropout(config.dropout_keep_rate)
+        self.layer = layer
         if layer > 1:
             text_emb = config.text_emb*2
         else:
@@ -41,7 +42,7 @@ class LSTMLayer(torch.nn.Module):
     def attention_net(self, lstm_output, final_state):
         hidden = final_state.permute(1, 0, 2)
         hidden = hidden.squeeze(0)
-        hidden = hidden.reshape(32, -1)
+        hidden = hidden.reshape(self.config.batch_size * self.config.task, -1)
         hidden = hidden.unsqueeze(1)
         hidden = hidden.permute(0, 2, 1)
         attn_weights = torch.bmm(lstm_output, hidden).squeeze(2)
@@ -63,7 +64,8 @@ class LSTMLayer(torch.nn.Module):
                 # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
-        # out = self.attention_net(out, hn) #attention
+        if self.layer == 1:
+            out = self.attention_net(out, hn) #attention
         avg_out = torch.mean(out, dim=1)
         return avg_out, out
 
