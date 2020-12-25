@@ -58,10 +58,8 @@ class LSTMLayer(torch.nn.Module):
         if initial_state is None:
             h0 = torch.autograd.Variable(torch.zeros(
                 (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
-                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             c0 = torch.autograd.Variable(torch.zeros(
                 (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size)).cuda()
-                # (1+self.config.bidirectional)*self.config.lstm_layer_size, word_emb_new.size(0), self.config.hidden_size))
             initial_state = (h0, c0)
         out, (hn, cn) = self.lstm(word_emb_new, initial_state)
         if self.layer == 1:
